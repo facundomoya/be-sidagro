@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -14,6 +15,7 @@ import { CatalogoService } from '../services/catalogo.service';
 import { CreateCampaniaDto } from '../dto/create-campania.dto';
 import { CreateLoteDto } from '../dto/create-lote.dto';
 
+@ApiTags('Agro - Catálogo')
 @Controller('agro')
 export class CatalogoController {
   constructor(private readonly catalogoService: CatalogoService) {}

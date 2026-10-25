@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -9,13 +10,14 @@ import {
   Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { QueryDto } from 'src/common/dtos/baseQuery.dto';
-import type { Filters } from 'src/common/types/filters.type';
+import { QueryDto } from '../common/dtos/baseQuery.dto';
+import type { Filters } from '../common/types/filters.type';
 import { User } from './entities/user.entity';
 import type { DeepPartial } from 'typeorm';
 import { ValidPermissions } from '../auth/enums/valid-permissions';
 import { Auth } from '../auth/decorators/auth.decorator';
 
+@ApiTags('Usuarios')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -63,10 +65,7 @@ export class UserController {
   }
 
   @Post(':userId/add/role/:roleId')
-  addRole(
-    @Param('userId') userId: string,
-    @Param('roleId') roleId: string,
-  ) {
+  addRole(@Param('userId') userId: string, @Param('roleId') roleId: string) {
     return this.userService.addRole(userId, roleId);
   }
 

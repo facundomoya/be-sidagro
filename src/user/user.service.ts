@@ -2,11 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import {
   GenericQueryService,
   ResponseFindAll,
-} from 'src/common/generic_query.service';
+} from '../common/generic_query.service';
 import { User } from './entities/user.entity';
 import { RolesEntity } from '../role/entities/role.entity';
 import { Bcrypt } from '../common/bcrypt/bcrypt';
-import type { Filters } from 'src/common/types/filters.type';
+import type { Filters } from '../common/types/filters.type';
 import type { DeepPartial } from 'typeorm';
 
 @Injectable()

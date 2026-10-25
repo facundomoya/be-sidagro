@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -15,6 +16,7 @@ import { User } from '../../user/entities/user.entity';
 import { CreateSimulacionDto } from '../dto/create-simulacion.dto';
 import { SimulacionService } from '../services/simulacion.service';
 
+@ApiTags('Agro - Simulaciones')
 @Controller('agro/simulaciones')
 export class SimulacionController {
   constructor(private readonly simulacionService: SimulacionService) {}
