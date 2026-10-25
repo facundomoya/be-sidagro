@@ -20,6 +20,7 @@ export class UserRoleGuard implements CanActivate {
 
     if (!user) return false;
     if (validRoles.length === 0) return true;
+    if (!user.role?.permission) return false;
     const namePermissionUSer = user.role.permission.map(
       (permission) => permission.name,
     );

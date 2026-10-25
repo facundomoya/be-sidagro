@@ -28,6 +28,9 @@ export class AuthService {
     if (!isMatch) {
       throw new UnauthorizedException('Invalid credentials');
     }
+    if (!user.isActive) {
+      throw new UnauthorizedException('Usuario dado de baja');
+    }
 
     const { password, ...result } = user;
 
