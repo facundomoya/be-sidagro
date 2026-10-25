@@ -7,6 +7,7 @@ import {
 import { Request, Response } from 'express';
 import { Observable, tap } from 'rxjs';
 import { AuditService } from '../../audit/audit.service';
+import { sanitize } from '../../common/utils/sanitize.utils';
 
 @Injectable()
 export class LogginInterceptor implements NestInterceptor {
@@ -29,9 +30,10 @@ export class LogginInterceptor implements NestInterceptor {
         const endTime = Date.now();
         const duration = endTime - startTime;
         const timestamp = new Date().toISOString();
+        const safeBody = JSON.stringify(sanitize(request.body ?? {}));
 
         console.log(
-          `[${timestamp}] ${method} ${url} - ${duration}ms - IP: ${ip} - Body: ${JSON.stringify(request.body)}`,
+          `[${timestamp}] ${method} ${url} - ${duration}ms - IP: ${ip} - Body: ${safeBody}`,
         );
 
         this.auditService
@@ -39,7 +41,7 @@ export class LogginInterceptor implements NestInterceptor {
             statusCode,
             method,
             path: url,
-            message: JSON.stringify(request.body ?? {}),
+            message: safeBody,
             ip: ip,
             stack: null,
             timestamp: new Date(),
