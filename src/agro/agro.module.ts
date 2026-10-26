@@ -12,6 +12,10 @@ import { CatalogoController } from './controllers/catalogo.controller';
 import { SimulacionController } from './controllers/simulacion.controller';
 import { CatalogoService } from './services/catalogo.service';
 import { SimulacionService } from './services/simulacion.service';
+import { ClimaController } from './controllers/clima.controller';
+import { ClimaService } from './clima/clima.service';
+import { CLIMATE_PROVIDER } from './clima/climate-provider.interface';
+import { OpenMeteoProvider } from './clima/open-meteo.provider';
 
 @Module({
   imports: [
@@ -26,8 +30,14 @@ import { SimulacionService } from './services/simulacion.service';
       SimulacionEscenario,
     ]),
   ],
-  controllers: [CatalogoController, SimulacionController],
-  providers: [CatalogoService, SimulacionService],
-  exports: [TypeOrmModule, CatalogoService, SimulacionService],
+  controllers: [CatalogoController, SimulacionController, ClimaController],
+  providers: [
+    CatalogoService,
+    SimulacionService,
+    ClimaService,
+    // Para cambiar de proveedor climatico basta con reemplazar useClass.
+    { provide: CLIMATE_PROVIDER, useClass: OpenMeteoProvider },
+  ],
+  exports: [TypeOrmModule, CatalogoService, SimulacionService, ClimaService],
 })
 export class AgroModule {}

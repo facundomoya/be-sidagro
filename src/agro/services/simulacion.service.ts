@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  NotImplementedException,
 } from '@nestjs/common';
 import { GenericQueryService } from '../../common/generic_query.service';
 import type { Filters } from '../../common/types/filters.type';
@@ -19,14 +18,22 @@ import {
   MAX_DIAS_CLIMATICOS,
 } from '../enums/agro.enums';
 import { CatalogoService } from './catalogo.service';
+import { ClimaService } from '../clima/clima.service';
+import { Lote } from '../entities/lote.entity';
 
 const MS_POR_DIA = 24 * 60 * 60 * 1000;
+
+interface SerieClimatica {
+  dias: DatoClimaticoDto[];
+  proveedor: string | null;
+}
 
 @Injectable()
 export class SimulacionService {
   constructor(
     private readonly repository: GenericQueryService,
     private readonly catalogoService: CatalogoService,
+    private readonly climaService: ClimaService,
   ) {}
 
   async create(dto: CreateSimulacionDto, usuario: User) {
@@ -36,7 +43,7 @@ export class SimulacionService {
     }
     const etapa = await this.catalogoService.findEtapa(dto.etapaId);
 
-    const serie = this.obtenerSerieClimatica(dto);
+    const serie = await this.obtenerSerieClimatica(dto, lote);
 
     const simulacionId = await this.repository.withTransaction(
       async (manager) => {
@@ -60,13 +67,13 @@ export class SimulacionService {
           manager,
         );
 
-        for (const dia of serie) {
+        for (const dia of serie.dias) {
           await this.repository.save(
             DatoClimatico,
             {
               ...dia,
               fuente: dto.fuenteClimatica,
-              proveedor: null,
+              proveedor: serie.proveedor,
               simulacion: { id: simulacion.id },
             },
             manager,
@@ -105,13 +112,33 @@ export class SimulacionService {
     return simulacion;
   }
 
-  private obtenerSerieClimatica(dto: CreateSimulacionDto): DatoClimaticoDto[] {
+  private async obtenerSerieClimatica(
+    dto: CreateSimulacionDto,
+    lote: Lote,
+  ): Promise<SerieClimatica> {
     if (dto.fuenteClimatica === FuenteClimatica.API) {
-      throw new NotImplementedException(
-        'La obtencion de clima desde la API todavia no esta disponible; use fuenteClimatica MANUAL',
+      const pronostico = await this.climaService.obtenerPronostico(
+        lote.provincia.id,
+        dto.dias ?? MAX_DIAS_CLIMATICOS,
       );
+      // Solo se persisten las variables climaticas; icono y probabilidad
+      // de lluvia son datos de presentacion del pronostico.
+      const dias = pronostico.dias.map(
+        ({ fecha, temperatura, precipitacion, humedad, viento }) => ({
+          fecha,
+          temperatura,
+          precipitacion,
+          humedad,
+          viento,
+        }),
+      );
+      return { dias, proveedor: pronostico.proveedor };
     }
 
+    return { dias: this.validarSerieManual(dto), proveedor: null };
+  }
+
+  private validarSerieManual(dto: CreateSimulacionDto): DatoClimaticoDto[] {
     const serie = [...(dto.datosClimaticos ?? [])].sort((a, b) =>
       a.fecha.localeCompare(b.fecha),
     );

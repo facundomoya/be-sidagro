@@ -1,4 +1,8 @@
-import { BadRequestException, NotImplementedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { ClimaService } from '../clima/clima.service';
 import { GenericQueryService } from '../../common/generic_query.service';
 import { User } from '../../user/entities/user.entity';
 import { CreateSimulacionDto } from '../dto/create-simulacion.dto';
@@ -29,6 +33,7 @@ describe('SimulacionService', () => {
     withTransaction: jest.Mock;
     findOne: jest.Mock;
   };
+  let clima: { obtenerPronostico: jest.Mock };
   let service: SimulacionService;
 
   beforeEach(() => {
@@ -45,14 +50,34 @@ describe('SimulacionService', () => {
       findOne: jest.fn().mockResolvedValue({ id: 10, datosClimaticos: [] }),
     };
     const catalogo = {
-      findLote: jest
-        .fn()
-        .mockResolvedValue({ id: 2, estado: 'ACTIVO', nombre: 'L1' }),
+      findLote: jest.fn().mockResolvedValue({
+        id: 2,
+        estado: 'ACTIVO',
+        nombre: 'L1',
+        provincia: { id: 7 },
+      }),
       findEtapa: jest.fn().mockResolvedValue(etapa),
+    };
+    clima = {
+      obtenerPronostico: jest.fn().mockResolvedValue({
+        proveedor: 'Open-Meteo',
+        dias: [
+          {
+            ...dia('2026-10-26'),
+            probabilidadLluvia: 20,
+            estadoCielo: {
+              codigo: 3,
+              descripcion: 'Nublado',
+              icono: 'nublado',
+            },
+          },
+        ],
+      }),
     };
     service = new SimulacionService(
       repository as unknown as GenericQueryService,
       catalogo as unknown as CatalogoService,
+      clima as unknown as ClimaService,
     );
   });
 
@@ -105,10 +130,38 @@ describe('SimulacionService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('informa que la fuente API todavia no esta disponible', async () => {
+  it('con fuente API usa el pronostico de la provincia del lote', async () => {
+    await service.create(
+      dto({
+        fuenteClimatica: FuenteClimatica.API,
+        datosClimaticos: undefined,
+        dias: 3,
+      }),
+      usuario,
+    );
+
+    expect(clima.obtenerPronostico).toHaveBeenCalledWith(7, 3);
+    const calls = repository.save.mock.calls as [
+      unknown,
+      Record<string, unknown>,
+    ][];
+    expect(calls[1][1]).toMatchObject({
+      fecha: '2026-10-26',
+      fuente: FuenteClimatica.API,
+      proveedor: 'Open-Meteo',
+    });
+    expect(calls[1][1]).not.toHaveProperty('estadoCielo');
+    expect(calls[1][1]).not.toHaveProperty('probabilidadLluvia');
+  });
+
+  it('no guarda nada si el proveedor climatico falla', async () => {
+    clima.obtenerPronostico.mockRejectedValue(
+      new ServiceUnavailableException(),
+    );
+
     await expect(
       service.create(dto({ fuenteClimatica: FuenteClimatica.API }), usuario),
-    ).rejects.toBeInstanceOf(NotImplementedException);
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
     expect(repository.save).not.toHaveBeenCalled();
   });
 });

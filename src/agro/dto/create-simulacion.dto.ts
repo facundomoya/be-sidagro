@@ -94,7 +94,8 @@ export class CreateSimulacionDto {
   @ApiProperty({
     enum: FuenteClimatica,
     example: FuenteClimatica.MANUAL,
-    description: 'API todavia no disponible (responde 501)',
+    description:
+      'API obtiene el pronostico de Open-Meteo para la provincia del lote; MANUAL usa datosClimaticos',
   })
   @IsEnum(FuenteClimatica, {
     message: `fuenteClimatica debe ser ${Object.values(FuenteClimatica).join(' o ')}`,
@@ -119,6 +120,18 @@ export class CreateSimulacionDto {
   @ValidateNested({ each: true })
   @Type(() => DatoClimaticoDto)
   datosClimaticos?: DatoClimaticoDto[];
+
+  @ApiPropertyOptional({
+    minimum: 1,
+    maximum: MAX_DIAS_CLIMATICOS,
+    default: MAX_DIAS_CLIMATICOS,
+    description: 'Solo con fuenteClimatica API: dias de pronostico a usar',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_DIAS_CLIMATICOS)
+  dias?: number;
 
   @ApiProperty({
     enum: NivelRiesgo,
