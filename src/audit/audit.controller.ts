@@ -1,3 +1,4 @@
+import { ApiTags } from '@nestjs/swagger';
 import {
   Controller,
   Get,
@@ -8,6 +9,7 @@ import { AuditService } from './audit.service';
 import { Auth } from '../auth/decorators/auth.decorator';
 import { ValidPermissions } from '../auth/enums/valid-permissions';
 
+@ApiTags('Auditoría')
 @Controller('audit')
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}

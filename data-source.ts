@@ -4,7 +4,6 @@ import { envConfig } from './src/config/env.validation';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
-console.log(envConfig);
 
 export const appDataSource = new DataSource({
     type: 'mysql',

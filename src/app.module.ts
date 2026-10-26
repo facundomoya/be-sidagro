@@ -13,6 +13,7 @@ import { RoleModule } from './role/role.module';
 import { AuditModule } from './audit/audit.module';
 import { LoggerModule } from './logger/logger.module';
 import { PermissionModule } from './permission/permission.module';
+import { AgroModule } from './agro/agro.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { PermissionModule } from './permission/permission.module';
     AuditModule,
     LoggerModule,
     PermissionModule,
+    AgroModule,
   ],
   controllers: [AppController],
   providers: [AppService],
