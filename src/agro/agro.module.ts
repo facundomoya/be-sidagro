@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Campania } from './entities/campania.entity';
 import { DatoClimatico } from './entities/dato-climatico.entity';
@@ -12,6 +13,13 @@ import { CatalogoController } from './controllers/catalogo.controller';
 import { SimulacionController } from './controllers/simulacion.controller';
 import { CatalogoService } from './services/catalogo.service';
 import { SimulacionService } from './services/simulacion.service';
+import { ClimaController } from './controllers/clima.controller';
+import { ClimaService } from './clima/clima.service';
+import { CLIMATE_PROVIDER } from './clima/climate-provider.interface';
+import { OpenMeteoProvider } from './clima/open-meteo.provider';
+import { RECOMMENDATION_PROVIDER } from './recomendacion/recommendation-provider.interface';
+import { ReglasLocalesProvider } from './recomendacion/reglas-locales.provider';
+import { GeminiProvider } from './recomendacion/gemini.provider';
 
 @Module({
   imports: [
@@ -26,8 +34,23 @@ import { SimulacionService } from './services/simulacion.service';
       SimulacionEscenario,
     ]),
   ],
-  controllers: [CatalogoController, SimulacionController],
-  providers: [CatalogoService, SimulacionService],
-  exports: [TypeOrmModule, CatalogoService, SimulacionService],
+  controllers: [CatalogoController, SimulacionController, ClimaController],
+  providers: [
+    CatalogoService,
+    SimulacionService,
+    ClimaService,
+    // Para cambiar de proveedor climatico basta con reemplazar useClass.
+    { provide: CLIMATE_PROVIDER, useClass: OpenMeteoProvider },
+    // IA_PROVEEDOR=gemini usa Gemini con File Search; si no, reglas locales.
+    {
+      provide: RECOMMENDATION_PROVIDER,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) =>
+        config.get<string>('IA_PROVEEDOR') === 'gemini'
+          ? new GeminiProvider(config)
+          : new ReglasLocalesProvider(),
+    },
+  ],
+  exports: [TypeOrmModule, CatalogoService, SimulacionService, ClimaService],
 })
 export class AgroModule {}

@@ -1,6 +1,7 @@
 import { Column, Entity, JoinColumn, OneToOne } from 'typeorm';
 import { BaseClass } from '../../common/entities/baseClass.entity';
 import { SimulacionEscenario } from './simulacion-escenario.entity';
+import type { FuenteConsultada } from '../recomendacion/recommendation-provider.interface';
 
 @Entity({ name: 'recomendacion_agronomica' })
 export class RecomendacionAgronomica extends BaseClass {
@@ -16,10 +17,22 @@ export class RecomendacionAgronomica extends BaseClass {
   simulacion!: SimulacionEscenario;
 
   @Column({ type: 'text' })
-  descripcion!: string;
+  resumen!: string;
+
+  @Column({ type: 'text', nullable: true })
+  analisisDetallado!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  analisisEtapaFenologica!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  analisisClimatico!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  analisisSanitario!: string | null;
 
   @Column({ type: 'text' })
-  accionSugerida!: string;
+  recomendacionPrincipal!: string;
 
   @Column({ type: 'varchar', length: 40 })
   nivelRiesgo!: string;
@@ -27,8 +40,17 @@ export class RecomendacionAgronomica extends BaseClass {
   @Column({ type: 'varchar', length: 40 })
   prioridad!: string;
 
+  @Column({ type: 'varchar', length: 20, default: 'BAJO' })
+  nivelConfianza!: string;
+
   @Column({ type: 'json', nullable: true })
-  fundamento!: string[] | null;
+  factoresRiesgo!: string[] | null;
+
+  @Column({ type: 'json', nullable: true })
+  factoresAtenuantes!: string[] | null;
+
+  @Column({ type: 'json', nullable: true })
+  accionesSugeridas!: string[] | null;
 
   @Column({ type: 'json', nullable: true })
   datosFaltantes!: string[] | null;
@@ -37,7 +59,7 @@ export class RecomendacionAgronomica extends BaseClass {
   advertencias!: string[] | null;
 
   @Column({ type: 'json', nullable: true })
-  fuentesConsultadas!: Record<string, string>[] | null;
+  fuentesConsultadas!: FuenteConsultada[] | null;
 
   @Column({ type: 'longtext', nullable: true })
   respuestaOriginal!: string | null;
