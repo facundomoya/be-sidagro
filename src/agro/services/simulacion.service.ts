@@ -1,7 +1,11 @@
 import {
   BadRequestException,
+  ConflictException,
+  Inject,
   Injectable,
+  Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { GenericQueryService } from '../../common/generic_query.service';
 import type { Filters } from '../../common/types/filters.type';
@@ -20,6 +24,13 @@ import {
 import { CatalogoService } from './catalogo.service';
 import { ClimaService } from '../clima/clima.service';
 import { Lote } from '../entities/lote.entity';
+import { RecomendacionAgronomica } from '../entities/recomendacion-agronomica.entity';
+import {
+  RECOMMENDATION_PROVIDER,
+  type RecommendationProvider,
+} from '../recomendacion/recommendation-provider.interface';
+import { construirContexto } from '../recomendacion/contexto-escenario';
+import { validarRecomendacion } from '../recomendacion/validar-recomendacion';
 
 const MS_POR_DIA = 24 * 60 * 60 * 1000;
 
@@ -30,10 +41,14 @@ interface SerieClimatica {
 
 @Injectable()
 export class SimulacionService {
+  private readonly logger = new Logger(SimulacionService.name);
+
   constructor(
     private readonly repository: GenericQueryService,
     private readonly catalogoService: CatalogoService,
     private readonly climaService: ClimaService,
+    @Inject(RECOMMENDATION_PROVIDER)
+    private readonly recommendationProvider: RecommendationProvider,
   ) {}
 
   async create(dto: CreateSimulacionDto, usuario: User) {
@@ -84,7 +99,26 @@ export class SimulacionService {
       },
     );
 
+    // El escenario ya quedo guardado: si la recomendacion falla, queda en
+    // ERROR y se puede reintentar con POST /agro/simulaciones/:id/recomendacion.
+    await this.intentarRecomendacion(simulacionId);
     return await this.findOne(simulacionId);
+  }
+
+  /** Reintento manual cuando la recomendacion fallo (estado ERROR). */
+  async recomendar(id: number) {
+    const simulacion = await this.findOne(id);
+    if (simulacion.recomendacion) {
+      throw new ConflictException(
+        `La simulacion ${id} ya tiene una recomendacion`,
+      );
+    }
+    if (!(await this.intentarRecomendacion(id))) {
+      throw new ServiceUnavailableException(
+        'No fue posible generar la recomendacion. Intente nuevamente mas tarde.',
+      );
+    }
+    return await this.findOne(id);
   }
 
   async findAll(filter: Filters) {
@@ -110,6 +144,50 @@ export class SimulacionService {
     }
     simulacion.datosClimaticos.sort((a, b) => a.fecha.localeCompare(b.fecha));
     return simulacion;
+  }
+
+  /** Genera, valida y guarda la recomendacion. Devuelve false si fallo. */
+  private async intentarRecomendacion(id: number): Promise<boolean> {
+    try {
+      const simulacion = await this.findOne(id);
+      const generada = await this.recommendationProvider.generar(
+        construirContexto(simulacion),
+      );
+      const errores = validarRecomendacion(generada);
+      if (errores.length > 0) {
+        throw new Error(`Recomendacion invalida: ${errores.join('; ')}`);
+      }
+
+      await this.repository.withTransaction(async (manager) => {
+        await this.repository.save(
+          RecomendacionAgronomica,
+          {
+            ...generada,
+            simulacion: { id },
+            modeloIa: this.recommendationProvider.modelo,
+            fechaGeneracion: new Date(),
+            respuestaOriginal: JSON.stringify(generada),
+          },
+          manager,
+        );
+        await this.repository.update(
+          SimulacionEscenario,
+          { id },
+          { estado: EstadoSimulacion.RECOMENDADA },
+          manager,
+        );
+      });
+      return true;
+    } catch (error) {
+      this.logger.error(
+        `No se pudo generar la recomendacion de la simulacion ${id}: ${(error as Error).message}`,
+      );
+      await this.repository
+        .update(SimulacionEscenario, { id }, { estado: EstadoSimulacion.ERROR })
+        // Si ya estaba en ERROR la base informa 0 filas cambiadas; no es un problema.
+        .catch(() => undefined);
+      return false;
+    }
   }
 
   private async obtenerSerieClimatica(

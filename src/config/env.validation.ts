@@ -41,6 +41,18 @@ export const envValidationSchema = Joi.object({
     is: 'sftp',
     then: Joi.required(),
   }),
+
+  IA_PROVEEDOR: Joi.string().valid('reglas', 'gemini').default('reglas'),
+  GEMINI_API_KEY: Joi.string().when('IA_PROVEEDOR', {
+    is: 'gemini',
+    then: Joi.required(),
+  }),
+  GEMINI_FILE_SEARCH_STORE: Joi.string().when('IA_PROVEEDOR', {
+    is: 'gemini',
+    then: Joi.required(),
+  }),
+  GEMINI_MODEL: Joi.string().allow(''),
+  GEMINI_TIMEOUT_MS: Joi.number().allow(''),
 }).messages({
   'any.required': `The variable {#label} is required in the file ${envFile}`,
   'string.base': `The variable {#label} must be a string in the file ${envFile}`,

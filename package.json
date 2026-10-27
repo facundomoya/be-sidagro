@@ -28,9 +28,11 @@
     "migration:run:dev": "cross-env NODE_ENV=development npm run migration:run",
     "migration:run:test": "cross-env NODE_ENV=test npm run migration:run",
     "migration:run:production": "cross-env NODE_ENV=production npm run migration:run",
-    "migration:revert": "npm run typeorm -- migration:revert"
+    "migration:revert": "npm run typeorm -- migration:revert",
+    "ia:indexar": "ts-node scripts/ia-indexar.ts"
   },
   "dependencies": {
+    "@google/genai": "^2.31.0",
     "@nestjs/common": "^11.1.16",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.1.16",

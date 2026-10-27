@@ -1,4 +1,8 @@
-import { ApiTags } from '@nestjs/swagger';
+import {
+  ApiConflictResponse,
+  ApiServiceUnavailableResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import {
   Body,
   Controller,
@@ -37,5 +41,16 @@ export class SimulacionController {
   @Auth(ValidPermissions.SIMULACION_GET_ONE)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.simulacionService.findOne(id);
+  }
+
+  /** Reintenta la recomendacion de una simulacion que quedo en ERROR. Sin body. */
+  @Post(':id/recomendacion')
+  @Auth(ValidPermissions.SIMULACION_POST)
+  @ApiConflictResponse({ description: 'La simulacion ya tiene recomendacion' })
+  @ApiServiceUnavailableResponse({
+    description: 'No se pudo generar; la simulacion queda en ERROR',
+  })
+  recomendar(@Param('id', ParseIntPipe) id: number) {
+    return this.simulacionService.recomendar(id);
   }
 }
