@@ -63,7 +63,7 @@ export interface RecomendacionGenerada {
 
 /**
  * Quien genera la recomendacion. La simulacion depende solo de esta interfaz:
- * hoy reglas locales, luego Gemini con File Search.
+ * reglas locales o Mistral con los documentos de referencia.
  */
 export interface RecommendationProvider {
   /** Se guarda en recomendacion_agronomica.modeloIa. */

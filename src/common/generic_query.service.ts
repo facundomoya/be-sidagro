@@ -104,7 +104,9 @@ export class GenericQueryService {
     parentAlias: string,
   ) {
     Object.entries(relations).forEach(([key, value]) => {
-      const alias = `${parentAlias}_${key}`;
+      // Doble guion bajo: con "_" el alias "entity_provincia" + columna "id"
+      // choca con la FK "provincia_id" de "entity" en el subquery de take().
+      const alias = `${parentAlias}__${key}`;
 
       qb.leftJoinAndSelect(`${parentAlias}.${key}`, alias);
 

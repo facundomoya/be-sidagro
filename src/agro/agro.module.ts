@@ -19,7 +19,7 @@ import { CLIMATE_PROVIDER } from './clima/climate-provider.interface';
 import { OpenMeteoProvider } from './clima/open-meteo.provider';
 import { RECOMMENDATION_PROVIDER } from './recomendacion/recommendation-provider.interface';
 import { ReglasLocalesProvider } from './recomendacion/reglas-locales.provider';
-import { GeminiProvider } from './recomendacion/gemini.provider';
+import { MistralProvider } from './recomendacion/mistral.provider';
 
 @Module({
   imports: [
@@ -41,13 +41,13 @@ import { GeminiProvider } from './recomendacion/gemini.provider';
     ClimaService,
     // Para cambiar de proveedor climatico basta con reemplazar useClass.
     { provide: CLIMATE_PROVIDER, useClass: OpenMeteoProvider },
-    // IA_PROVEEDOR=gemini usa Gemini con File Search; si no, reglas locales.
+    // IA_PROVEEDOR=mistral usa la IA con los documentos; si no, reglas locales.
     {
       provide: RECOMMENDATION_PROVIDER,
       inject: [ConfigService],
       useFactory: (config: ConfigService) =>
-        config.get<string>('IA_PROVEEDOR') === 'gemini'
-          ? new GeminiProvider(config)
+        config.get<string>('IA_PROVEEDOR') === 'mistral'
+          ? new MistralProvider(config)
           : new ReglasLocalesProvider(),
     },
   ],
