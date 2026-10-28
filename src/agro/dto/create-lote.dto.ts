@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsDateString,
   IsInt,
   IsNumber,
   IsOptional,
@@ -28,6 +29,19 @@ export class CreateLoteDto {
   @IsNumber()
   @IsPositive()
   superficie?: number;
+
+  @ApiPropertyOptional({
+    format: 'date',
+    example: '2026-10-15',
+    description:
+      'Fecha de siembra. Necesaria para el monitoreo de chinche verde (grados dia)',
+  })
+  @IsOptional()
+  @IsDateString(
+    { strict: true },
+    { message: 'fechaSiembra debe tener formato YYYY-MM-DD' },
+  )
+  fechaSiembra?: string;
 
   @ApiProperty({ minimum: 1, example: 1 })
   @IsInt()

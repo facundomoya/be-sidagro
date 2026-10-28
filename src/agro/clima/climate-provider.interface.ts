@@ -18,6 +18,13 @@ export interface PronosticoDiario extends DatoClimaticoDiario {
   estadoCielo: EstadoCielo;
 }
 
+/** Temperaturas extremas de un dia, para calcular grados dia (°C). */
+export interface TemperaturaDiaria {
+  fecha: string;
+  maxima: number;
+  minima: number;
+}
+
 /**
  * Fuente de datos climaticos. La simulacion depende solo de esta interfaz,
  * asi el proveedor (hoy Open-Meteo) se puede reemplazar sin tocarla.
@@ -29,6 +36,13 @@ export interface ClimateProvider {
     longitud: number,
     dias: number,
   ): Promise<PronosticoDiario[]>;
+  /** Serie diaria entre dos fechas (YYYY-MM-DD), incluidas: pasado y pronostico. */
+  obtenerTemperaturas(
+    latitud: number,
+    longitud: number,
+    desde: string,
+    hasta: string,
+  ): Promise<TemperaturaDiaria[]>;
 }
 
 export const CLIMATE_PROVIDER = Symbol('CLIMATE_PROVIDER');

@@ -3,6 +3,7 @@ import { BaseClass } from '../../common/entities/baseClass.entity';
 import { Provincia } from './provincia.entity';
 import { Campania } from './campania.entity';
 import { SimulacionEscenario } from './simulacion-escenario.entity';
+import { ObservacionMonitoreo } from './observacion-monitoreo.entity';
 
 @Entity({ name: 'lote' })
 export class Lote extends BaseClass {
@@ -14,6 +15,10 @@ export class Lote extends BaseClass {
 
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   superficie!: number | null;
+
+  /** Desde esta fecha se acumulan los grados dia del monitoreo. */
+  @Column({ type: 'date', nullable: true })
+  fechaSiembra!: string | null;
 
   @Column({ type: 'varchar', length: 30, default: 'ACTIVO' })
   estado!: string;
@@ -32,4 +37,7 @@ export class Lote extends BaseClass {
 
   @OneToMany(() => SimulacionEscenario, (simulacion) => simulacion.lote)
   simulaciones!: SimulacionEscenario[];
+
+  @OneToMany(() => ObservacionMonitoreo, (observacion) => observacion.lote)
+  observaciones!: ObservacionMonitoreo[];
 }

@@ -12,6 +12,7 @@ import { Lote } from '../entities/lote.entity';
 import { Provincia } from '../entities/provincia.entity';
 import { CreateCampaniaDto } from '../dto/create-campania.dto';
 import { CreateLoteDto } from '../dto/create-lote.dto';
+import { UpdateLoteDto } from '../dto/update-lote.dto';
 
 /** Datos de referencia que usa la simulacion: provincias, campanias, lotes y etapas. */
 @Injectable()
@@ -105,5 +106,17 @@ export class CatalogoService {
       campania,
     });
     return await this.findLote(lote.id);
+  }
+
+  async updateLote(id: number, dto: UpdateLoteDto): Promise<Lote> {
+    const lote = await this.findLote(id);
+    if (Object.keys(dto).length === 0) return lote;
+    await this.repository
+      .update(Lote, { id }, dto)
+      // Sin valores nuevos la base informa 0 filas cambiadas; el lote existe.
+      .catch((error: unknown) => {
+        if (!(error instanceof NotFoundException)) throw error;
+      });
+    return await this.findLote(id);
   }
 }
