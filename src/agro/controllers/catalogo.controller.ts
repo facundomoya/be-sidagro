@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { ValidPermissions } from '../../auth/enums/valid-permissions';
 import { CatalogoService } from '../services/catalogo.service';
 import { CreateCampaniaDto } from '../dto/create-campania.dto';
 import { CreateLoteDto } from '../dto/create-lote.dto';
+import { UpdateLoteDto } from '../dto/update-lote.dto';
 
 @ApiTags('Agro - Catálogo')
 @Controller('agro')
@@ -66,5 +68,15 @@ export class CatalogoController {
   @Auth(ValidPermissions.LOTE_POST)
   createLote(@Body() dto: CreateLoteDto) {
     return this.catalogoService.createLote(dto);
+  }
+
+  /** Por ejemplo, para cargar la fecha de siembra que usa el monitoreo. */
+  @Patch('lotes/:id')
+  @Auth(ValidPermissions.LOTE_PUT)
+  updateLote(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateLoteDto,
+  ) {
+    return this.catalogoService.updateLote(id, dto);
   }
 }

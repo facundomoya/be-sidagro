@@ -42,17 +42,14 @@ export const envValidationSchema = Joi.object({
     then: Joi.required(),
   }),
 
-  IA_PROVEEDOR: Joi.string().valid('reglas', 'gemini').default('reglas'),
-  GEMINI_API_KEY: Joi.string().when('IA_PROVEEDOR', {
-    is: 'gemini',
+  IA_PROVEEDOR: Joi.string().valid('reglas', 'mistral').default('reglas'),
+  MISTRAL_API_KEY: Joi.string().when('IA_PROVEEDOR', {
+    is: 'mistral',
     then: Joi.required(),
   }),
-  GEMINI_FILE_SEARCH_STORE: Joi.string().when('IA_PROVEEDOR', {
-    is: 'gemini',
-    then: Joi.required(),
-  }),
-  GEMINI_MODEL: Joi.string().allow(''),
-  GEMINI_TIMEOUT_MS: Joi.number().allow(''),
+  MISTRAL_MODEL: Joi.string().allow(''),
+  MISTRAL_TIMEOUT_MS: Joi.number().allow(''),
+  IA_INDICE_PATH: Joi.string().allow(''),
 }).messages({
   'any.required': `The variable {#label} is required in the file ${envFile}`,
   'string.base': `The variable {#label} must be a string in the file ${envFile}`,

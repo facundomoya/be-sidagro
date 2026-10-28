@@ -7,11 +7,19 @@ import { ConfigService } from '@nestjs/config';
 import {
   ClimateProvider,
   PronosticoDiario,
+  TemperaturaDiaria,
 } from './climate-provider.interface';
 import { estadoCieloDesdeWmo } from './estado-cielo';
 
 const URL_POR_DEFECTO = 'https://api.open-meteo.com/v1/forecast';
+// El pronostico comun solo llega unos 90 dias atras; este cubre toda la campania.
+const URL_HISTORICO_POR_DEFECTO =
+  'https://historical-forecast-api.open-meteo.com/v1/forecast';
 const TIMEOUT_POR_DEFECTO_MS = 8000;
+const VARIABLES_TEMPERATURA = [
+  'temperature_2m_max',
+  'temperature_2m_min',
+] as const;
 const VARIABLES_DIARIAS = [
   'temperature_2m_mean',
   'precipitation_sum',
@@ -29,7 +37,9 @@ const OBLIGATORIAS = [
   'viento',
 ] as const;
 
-type VariableDiaria = (typeof VARIABLES_DIARIAS)[number];
+type VariableDiaria =
+  | (typeof VARIABLES_DIARIAS)[number]
+  | (typeof VARIABLES_TEMPERATURA)[number];
 
 interface OpenMeteoRespuesta {
   error?: boolean;
@@ -49,11 +59,15 @@ export class OpenMeteoProvider implements ClimateProvider {
   readonly nombre = 'Open-Meteo';
   private readonly logger = new Logger(OpenMeteoProvider.name);
   private readonly url: string;
+  private readonly urlHistorico: string;
   private readonly timeoutMs: number;
 
   constructor(configService: ConfigService) {
     // || y no ??: una variable vacia en .env debe usar el valor por defecto.
     this.url = configService.get<string>('OPEN_METEO_URL') || URL_POR_DEFECTO;
+    this.urlHistorico =
+      configService.get<string>('OPEN_METEO_HISTORICO_URL') ||
+      URL_HISTORICO_POR_DEFECTO;
     this.timeoutMs =
       Number(configService.get<string>('OPEN_METEO_TIMEOUT_MS')) ||
       TIMEOUT_POR_DEFECTO_MS;
@@ -72,15 +86,57 @@ export class OpenMeteoProvider implements ClimateProvider {
       forecast_days: String(dias),
     });
 
-    let respuesta: OpenMeteoRespuesta;
+    const respuesta = await this.consultar(this.url, params);
+    return this.normalizar(respuesta, dias);
+  }
+
+  async obtenerTemperaturas(
+    latitud: number,
+    longitud: number,
+    desde: string,
+    hasta: string,
+  ): Promise<TemperaturaDiaria[]> {
+    const params = new URLSearchParams({
+      latitude: String(latitud),
+      longitude: String(longitud),
+      daily: VARIABLES_TEMPERATURA.join(','),
+      timezone: 'America/Argentina/Buenos_Aires',
+      start_date: desde,
+      end_date: hasta,
+    });
+    const { daily } = await this.consultar(this.urlHistorico, params);
+
+    const fechas = daily?.time ?? [];
+    const serie: TemperaturaDiaria[] = [];
+    fechas.forEach((fecha, i) => {
+      const maxima = daily?.temperature_2m_max?.[i];
+      const minima = daily?.temperature_2m_min?.[i];
+      // Los ultimos dias del pronostico pueden venir vacios: se cortan ahi.
+      if (typeof maxima === 'number' && typeof minima === 'number') {
+        serie.push({ fecha, maxima, minima });
+      }
+    });
+    if (serie.length === 0) {
+      throw new ServiceUnavailableException(
+        'Open-Meteo no devolvio temperaturas para el periodo del cultivo.',
+      );
+    }
+    return serie;
+  }
+
+  private async consultar(
+    url: string,
+    params: URLSearchParams,
+  ): Promise<OpenMeteoRespuesta> {
     try {
-      const res = await fetch(`${this.url}?${params.toString()}`, {
+      const res = await fetch(`${url}?${params.toString()}`, {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
-      respuesta = (await res.json()) as OpenMeteoRespuesta;
+      const respuesta = (await res.json()) as OpenMeteoRespuesta;
       if (!res.ok || respuesta.error) {
         throw new Error(respuesta.reason ?? `HTTP ${res.status}`);
       }
+      return respuesta;
     } catch (error) {
       this.logger.warn(
         `Fallo la consulta a Open-Meteo: ${(error as Error).message}`,
@@ -89,8 +145,6 @@ export class OpenMeteoProvider implements ClimateProvider {
         'No fue posible obtener los datos climaticos actualizados. Intente nuevamente o cargue el clima de forma manual.',
       );
     }
-
-    return this.normalizar(respuesta, dias);
   }
 
   private normalizar(

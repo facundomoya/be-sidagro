@@ -29,10 +29,9 @@
     "migration:run:test": "cross-env NODE_ENV=test npm run migration:run",
     "migration:run:production": "cross-env NODE_ENV=production npm run migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
-    "ia:indexar": "ts-node scripts/ia-indexar.ts"
+    "ia:indexar": "node scripts/ia-indexar.mjs"
   },
   "dependencies": {
-    "@google/genai": "^2.31.0",
     "@nestjs/common": "^11.1.16",
     "@nestjs/config": "^4.0.3",
     "@nestjs/core": "^11.1.16",
@@ -57,6 +56,7 @@
     "serve-static": "^2.2.1",
     "ssh2-sftp-client": "^12.1.0",
     "typeorm": "^0.3.28",
+    "unpdf": "^1.7.0",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"
   },
