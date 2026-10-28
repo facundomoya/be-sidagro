@@ -1,4 +1,7 @@
-import { PronosticoDiario } from '../clima/climate-provider.interface';
+import {
+  PronosticoDiario,
+  TemperaturaDiaria,
+} from '../clima/climate-provider.interface';
 import { IconoClima } from '../clima/estado-cielo';
 import {
   calcularMonitoreo,
@@ -38,7 +41,7 @@ const SIEMBRA = '2026-08-01';
 
 /** 25/15 °C todos los dias: 10 grados dia por dia. */
 const temperaturasHasta = (hasta: string) => {
-  const serie = [];
+  const serie: TemperaturaDiaria[] = [];
   for (let f = SIEMBRA; f <= hasta; f = sumarDias(f, 1)) {
     serie.push({ fecha: f, maxima: 25, minima: 15 });
   }

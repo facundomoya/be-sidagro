@@ -39,7 +39,7 @@ export class SimulacionController {
   @ApiOperation({
     summary: 'Crea el escenario y genera la recomendacion con IA',
     description:
-      'Clima MANUAL (datosClimaticos) o API (Open-Meteo, dias 1-7). Guarda el escenario y en el mismo pedido genera la recomendacion (tarda 15-25 s). Si la IA falla igual responde 201 con estado ERROR y recomendacion null: reintentar con POST /agro/simulaciones/:id/recomendacion.',
+      'El ingeniero carga el escenario y su clima (datosClimaticos, 1 a 7 dias). Guarda el escenario y en el mismo pedido genera la recomendacion con IA (tarda 15-25 s). Si la IA falla igual responde 201 con estado ERROR y recomendacion null: reintentar con POST /agro/simulaciones/:id/recomendacion.',
   })
   @ApiCreatedResponse({ type: SimulacionRespuestaDto })
   @ApiBadRequestResponse({
@@ -47,9 +47,6 @@ export class SimulacionController {
       'Body invalido, lote no activo, fechas repetidas o serie de mas de 7 dias corridos',
   })
   @ApiNotFoundResponse({ description: 'El lote o la etapa no existen' })
-  @ApiServiceUnavailableResponse({
-    description: 'Con fuente API: Open-Meteo no respondio (no se guarda nada)',
-  })
   create(@Body() dto: CreateSimulacionDto, @GetUser() user: User) {
     return this.simulacionService.create(dto, user);
   }

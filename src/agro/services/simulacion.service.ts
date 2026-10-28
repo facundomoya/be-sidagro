@@ -22,8 +22,6 @@ import {
   MAX_DIAS_CLIMATICOS,
 } from '../enums/agro.enums';
 import { CatalogoService } from './catalogo.service';
-import { ClimaService } from '../clima/clima.service';
-import { Lote } from '../entities/lote.entity';
 import { RecomendacionAgronomica } from '../entities/recomendacion-agronomica.entity';
 import {
   RECOMMENDATION_PROVIDER,
@@ -34,11 +32,6 @@ import { validarRecomendacion } from '../recomendacion/validar-recomendacion';
 
 const MS_POR_DIA = 24 * 60 * 60 * 1000;
 
-interface SerieClimatica {
-  dias: DatoClimaticoDto[];
-  proveedor: string | null;
-}
-
 @Injectable()
 export class SimulacionService {
   private readonly logger = new Logger(SimulacionService.name);
@@ -46,7 +39,6 @@ export class SimulacionService {
   constructor(
     private readonly repository: GenericQueryService,
     private readonly catalogoService: CatalogoService,
-    private readonly climaService: ClimaService,
     @Inject(RECOMMENDATION_PROVIDER)
     private readonly recommendationProvider: RecommendationProvider,
   ) {}
@@ -58,7 +50,8 @@ export class SimulacionService {
     }
     const etapa = await this.catalogoService.findEtapa(dto.etapaId);
 
-    const serie = await this.obtenerSerieClimatica(dto, lote);
+    // El clima del escenario siempre lo carga el ingeniero (CU 07).
+    const serie = this.validarSerieManual(dto);
 
     const simulacionId = await this.repository.withTransaction(
       async (manager) => {
@@ -70,7 +63,7 @@ export class SimulacionService {
             usuario: { id: usuario.id },
             lote: { id: lote.id },
             etapa: { id: etapa.id },
-            fuenteClimatica: dto.fuenteClimatica,
+            fuenteClimatica: FuenteClimatica.MANUAL,
             riesgoPlaga: dto.riesgoObservado,
             observaciones: dto.observaciones ?? null,
             gddaMinimoUtilizado: etapa.gddaMinimo,
@@ -82,13 +75,13 @@ export class SimulacionService {
           manager,
         );
 
-        for (const dia of serie.dias) {
+        for (const dia of serie) {
           await this.repository.save(
             DatoClimatico,
             {
               ...dia,
-              fuente: dto.fuenteClimatica,
-              proveedor: serie.proveedor,
+              fuente: FuenteClimatica.MANUAL,
+              proveedor: null,
               simulacion: { id: simulacion.id },
             },
             manager,
@@ -190,34 +183,8 @@ export class SimulacionService {
     }
   }
 
-  private async obtenerSerieClimatica(
-    dto: CreateSimulacionDto,
-    lote: Lote,
-  ): Promise<SerieClimatica> {
-    if (dto.fuenteClimatica === FuenteClimatica.API) {
-      const pronostico = await this.climaService.obtenerPronostico(
-        lote.provincia.id,
-        dto.dias ?? MAX_DIAS_CLIMATICOS,
-      );
-      // Solo se persisten las variables climaticas; icono y probabilidad
-      // de lluvia son datos de presentacion del pronostico.
-      const dias = pronostico.dias.map(
-        ({ fecha, temperatura, precipitacion, humedad, viento }) => ({
-          fecha,
-          temperatura,
-          precipitacion,
-          humedad,
-          viento,
-        }),
-      );
-      return { dias, proveedor: pronostico.proveedor };
-    }
-
-    return { dias: this.validarSerieManual(dto), proveedor: null };
-  }
-
   private validarSerieManual(dto: CreateSimulacionDto): DatoClimaticoDto[] {
-    const serie = [...(dto.datosClimaticos ?? [])].sort((a, b) =>
+    const serie = [...dto.datosClimaticos].sort((a, b) =>
       a.fecha.localeCompare(b.fecha),
     );
 
