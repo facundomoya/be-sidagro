@@ -14,14 +14,9 @@ import {
   Max,
   MaxLength,
   Min,
-  ValidateIf,
   ValidateNested,
 } from 'class-validator';
-import {
-  FuenteClimatica,
-  MAX_DIAS_CLIMATICOS,
-  NivelRiesgo,
-} from '../enums/agro.enums';
+import { MAX_DIAS_CLIMATICOS, NivelRiesgo } from '../enums/agro.enums';
 
 export class DatoClimaticoDto {
   @ApiProperty({ example: '2026-11-01', format: 'date' })
@@ -92,46 +87,19 @@ export class CreateSimulacionDto {
   etapaId: number;
 
   @ApiProperty({
-    enum: FuenteClimatica,
-    example: FuenteClimatica.MANUAL,
-    description:
-      'API obtiene el pronostico de Open-Meteo para la provincia del lote; MANUAL usa datosClimaticos',
-  })
-  @IsEnum(FuenteClimatica, {
-    message: `fuenteClimatica debe ser ${Object.values(FuenteClimatica).join(' o ')}`,
-  })
-  fuenteClimatica: FuenteClimatica;
-
-  @ApiPropertyOptional({
     type: [DatoClimaticoDto],
     minItems: 1,
     maxItems: MAX_DIAS_CLIMATICOS,
-    description: `Obligatorio si fuenteClimatica es MANUAL. Serie diaria de hasta ${MAX_DIAS_CLIMATICOS} dias corridos, sin fechas repetidas.`,
+    description: `Clima del escenario cargado por el ingeniero: hasta ${MAX_DIAS_CLIMATICOS} dias corridos, sin fechas repetidas.`,
   })
-  @ValidateIf(
-    (dto: CreateSimulacionDto) =>
-      dto.fuenteClimatica === FuenteClimatica.MANUAL,
-  )
-  @IsArray()
+  @IsArray({ message: 'datosClimaticos debe ser una lista de dias' })
   @ArrayMinSize(1, { message: 'Debe informar al menos un dia climatico' })
   @ArrayMaxSize(MAX_DIAS_CLIMATICOS, {
     message: `La serie climatica admite hasta ${MAX_DIAS_CLIMATICOS} dias`,
   })
   @ValidateNested({ each: true })
   @Type(() => DatoClimaticoDto)
-  datosClimaticos?: DatoClimaticoDto[];
-
-  @ApiPropertyOptional({
-    minimum: 1,
-    maximum: MAX_DIAS_CLIMATICOS,
-    default: MAX_DIAS_CLIMATICOS,
-    description: 'Solo con fuenteClimatica API: dias de pronostico a usar',
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  @Max(MAX_DIAS_CLIMATICOS)
-  dias?: number;
+  datosClimaticos: DatoClimaticoDto[];
 
   @ApiProperty({
     enum: NivelRiesgo,

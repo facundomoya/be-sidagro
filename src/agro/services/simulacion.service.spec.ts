@@ -3,14 +3,13 @@ import {
   ConflictException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { ClimaService } from '../clima/clima.service';
 import { GenericQueryService } from '../../common/generic_query.service';
 import { User } from '../../user/entities/user.entity';
 import { CreateSimulacionDto } from '../dto/create-simulacion.dto';
 import { DatoClimatico } from '../entities/dato-climatico.entity';
 import { RecomendacionAgronomica } from '../entities/recomendacion-agronomica.entity';
 import { SimulacionEscenario } from '../entities/simulacion-escenario.entity';
-import { FuenteClimatica, NivelRiesgo } from '../enums/agro.enums';
+import { NivelRiesgo } from '../enums/agro.enums';
 import { ReglasLocalesProvider } from '../recomendacion/reglas-locales.provider';
 import { CatalogoService } from './catalogo.service';
 import { SimulacionService } from './simulacion.service';
@@ -61,7 +60,6 @@ describe('SimulacionService', () => {
     withTransaction: jest.Mock;
     findOne: jest.Mock;
   };
-  let clima: { obtenerPronostico: jest.Mock };
   let recomendador: { modelo: string; generar: jest.Mock };
   let service: SimulacionService;
 
@@ -97,22 +95,6 @@ describe('SimulacionService', () => {
       }),
       findEtapa: jest.fn().mockResolvedValue(etapa),
     };
-    clima = {
-      obtenerPronostico: jest.fn().mockResolvedValue({
-        proveedor: 'Open-Meteo',
-        dias: [
-          {
-            ...dia('2026-10-26'),
-            probabilidadLluvia: 20,
-            estadoCielo: {
-              codigo: 3,
-              descripcion: 'Nublado',
-              icono: 'nublado',
-            },
-          },
-        ],
-      }),
-    };
     const reglas = new ReglasLocalesProvider();
     recomendador = {
       modelo: reglas.modelo,
@@ -123,7 +105,6 @@ describe('SimulacionService', () => {
     service = new SimulacionService(
       repository as unknown as GenericQueryService,
       catalogo as unknown as CatalogoService,
-      clima as unknown as ClimaService,
       recomendador,
     );
   });
@@ -133,7 +114,6 @@ describe('SimulacionService', () => {
   ): CreateSimulacionDto => ({
     loteId: 2,
     etapaId: 4,
-    fuenteClimatica: FuenteClimatica.MANUAL,
     riesgoObservado: NivelRiesgo.MODERADO,
     datosClimaticos: [dia('2026-11-02'), dia('2026-11-01')],
     ...overrides,
@@ -172,38 +152,6 @@ describe('SimulacionService', () => {
         usuario,
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
-  });
-
-  it('con fuente API usa el pronostico de la provincia del lote', async () => {
-    await service.create(
-      dto({
-        fuenteClimatica: FuenteClimatica.API,
-        datosClimaticos: undefined,
-        dias: 3,
-      }),
-      usuario,
-    );
-
-    expect(clima.obtenerPronostico).toHaveBeenCalledWith(7, 3);
-    const [guardado] = guardados(DatoClimatico);
-    expect(guardado).toMatchObject({
-      fecha: '2026-10-26',
-      fuente: FuenteClimatica.API,
-      proveedor: 'Open-Meteo',
-    });
-    expect(guardado).not.toHaveProperty('estadoCielo');
-    expect(guardado).not.toHaveProperty('probabilidadLluvia');
-  });
-
-  it('no guarda nada si el proveedor climatico falla', async () => {
-    clima.obtenerPronostico.mockRejectedValue(
-      new ServiceUnavailableException(),
-    );
-
-    await expect(
-      service.create(dto({ fuenteClimatica: FuenteClimatica.API }), usuario),
-    ).rejects.toBeInstanceOf(ServiceUnavailableException);
-    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('guarda la recomendacion y deja el escenario RECOMENDADA', async () => {
