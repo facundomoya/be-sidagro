@@ -5,23 +5,28 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
+  ApiExtraModels,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiServiceUnavailableResponse,
   ApiTags,
+  getSchemaPath,
 } from '@nestjs/swagger';
 import { Auth } from '../../auth/decorators/auth.decorator';
 import { GetUser } from '../../auth/decorators/get-user.decorator';
 import { ValidPermissions } from '../../auth/enums/valid-permissions';
 import { User } from '../../user/entities/user.entity';
 import { CreateObservacionDto } from '../dto/create-observacion.dto';
+import { PaginacionOpcionalDto } from '../dto/paginacion-opcional.dto';
 import {
   MonitoreoRespuestaDto,
+  ObservacionesPaginadasRespuestaDto,
   ObservacionesRespuestaDto,
   ObservacionRespuestaDto,
 } from '../dto/monitoreo-response.dto';
@@ -51,11 +56,27 @@ export class MonitoreoController {
 
   @Get(':loteId/observaciones')
   @Auth(ValidPermissions.MONITOREO_GET)
-  @ApiOperation({ summary: 'Historial de observaciones de campo del lote' })
-  @ApiOkResponse({ type: ObservacionesRespuestaDto })
+  @ApiOperation({
+    summary: 'Historial de observaciones de campo del lote',
+    description:
+      'De la mas reciente a la mas vieja. Sin page ni limit devuelve todas en un array; con page o limit devuelve una pagina { data, total, page, limit, totalPages }.',
+  })
+  @ApiExtraModels(ObservacionesRespuestaDto, ObservacionesPaginadasRespuestaDto)
+  @ApiOkResponse({
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(ObservacionesRespuestaDto) },
+        { $ref: getSchemaPath(ObservacionesPaginadasRespuestaDto) },
+      ],
+    },
+  })
+  @ApiBadRequestResponse({ description: 'page o limit invalidos' })
   @ApiNotFoundResponse({ description: 'El lote no existe' })
-  findObservaciones(@Param('loteId', ParseIntPipe) loteId: number) {
-    return this.monitoreoService.findObservaciones(loteId);
+  findObservaciones(
+    @Param('loteId', ParseIntPipe) loteId: number,
+    @Query() paginacion: PaginacionOpcionalDto,
+  ) {
+    return this.monitoreoService.findObservaciones(loteId, paginacion);
   }
 
   @Post(':loteId/observaciones')

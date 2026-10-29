@@ -272,3 +272,35 @@ export class ObservacionesRespuestaDto {
   })
   data: ObservacionDto[];
 }
+
+class PaginaObservaciones {
+  @ApiProperty({ type: [ObservacionDto] })
+  data: ObservacionDto[];
+
+  @ApiProperty({ example: 23 })
+  total: number;
+
+  @ApiProperty({ example: 1 })
+  page: number;
+
+  @ApiProperty({ example: 10 })
+  limit: number;
+
+  @ApiProperty({ example: 3 })
+  totalPages: number;
+}
+
+/** Respuesta cuando se manda page o limit. */
+export class ObservacionesPaginadasRespuestaDto {
+  @ApiProperty({ example: 200 })
+  statusCode: number;
+
+  @ApiProperty({ example: 'Information successfully retrieved' })
+  message: string;
+
+  @ApiProperty({
+    type: PaginaObservaciones,
+    description: 'De la mas reciente a la mas vieja',
+  })
+  data: PaginaObservaciones;
+}

@@ -70,6 +70,13 @@ export class GenericQueryService {
       applyFilters(qb, filters);
     }
 
+    // orden por columnas propias ({ fecha: 'DESC' }), necesario para paginar
+    if (options?.order) {
+      Object.entries(options.order).forEach(([campo, direccion]) => {
+        qb.addOrderBy(`entity.${campo}`, direccion as 'ASC' | 'DESC');
+      });
+    }
+
     let data: T[] = [];
     let total = 0;
 

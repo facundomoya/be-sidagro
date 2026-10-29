@@ -1,9 +1,10 @@
 export function splitQuery(options: Record<string, any>) {
   const filters: Record<string, any> = {};
 
-  let page = 1;
-  let limit = 10;
-  let takeAll = false;
+  // Valores pasados desde el codigo ({ takeAll: true }); los de la query los pisan.
+  let page = Number(options.page) || 1;
+  let limit = Number(options.limit) || 10;
+  let takeAll = options.takeAll === true;
 
   Object.entries(options.filters ?? {}).forEach(([key, value]) => {
     if (key === 'page') {
