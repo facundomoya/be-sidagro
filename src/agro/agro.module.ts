@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Campania } from './entities/campania.entity';
+import { CostoProduccion } from './entities/costo-produccion.entity';
 import { DatoClimatico } from './entities/dato-climatico.entity';
 import { EtapaFenologica } from './entities/etapa-fenologica.entity';
 import { Lote } from './entities/lote.entity';
 import { ObservacionMonitoreo } from './entities/observacion-monitoreo.entity';
+import { PrecioSoja } from './entities/precio-soja.entity';
 import { Provincia } from './entities/provincia.entity';
 import { RecomendacionAgronomica } from './entities/recomendacion-agronomica.entity';
 import { SimulacionEscenario } from './entities/simulacion-escenario.entity';
@@ -23,16 +25,22 @@ import { ReglasLocalesProvider } from './recomendacion/reglas-locales.provider';
 import { MistralProvider } from './recomendacion/mistral.provider';
 import { MonitoreoController } from './controllers/monitoreo.controller';
 import { MonitoreoService } from './monitoreo/monitoreo.service';
+import { EconomicoController } from './controllers/economico.controller';
+import { EconomicoService } from './economico/economico.service';
+import { BcrPizarraProvider } from './economico/bcr-pizarra.provider';
+import { PRECIO_SOJA_PROVIDER } from './economico/precio-soja-provider.interface';
 
 @Module({
   imports: [
     CommonModule,
     TypeOrmModule.forFeature([
       Campania,
+      CostoProduccion,
       DatoClimatico,
       EtapaFenologica,
       Lote,
       ObservacionMonitoreo,
+      PrecioSoja,
       Provincia,
       RecomendacionAgronomica,
       SimulacionEscenario,
@@ -43,12 +51,15 @@ import { MonitoreoService } from './monitoreo/monitoreo.service';
     SimulacionController,
     ClimaController,
     MonitoreoController,
+    EconomicoController,
   ],
   providers: [
     CatalogoService,
     SimulacionService,
     ClimaService,
     MonitoreoService,
+    EconomicoService,
+    { provide: PRECIO_SOJA_PROVIDER, useClass: BcrPizarraProvider },
     // Para cambiar de proveedor climatico basta con reemplazar useClass.
     { provide: CLIMATE_PROVIDER, useClass: OpenMeteoProvider },
     // IA_PROVEEDOR=mistral usa la IA con los documentos; si no, reglas locales.

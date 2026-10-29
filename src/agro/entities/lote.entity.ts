@@ -16,6 +16,10 @@ export class Lote extends BaseClass {
   @Column({ type: 'decimal', precision: 12, scale: 2, nullable: true })
   superficie!: number | null;
 
+  /** Rendimiento esperado en toneladas por hectarea (modulo economico). */
+  @Column({ type: 'decimal', precision: 6, scale: 2, nullable: true })
+  rendimiento!: number | null;
+
   /** Desde esta fecha se acumulan los grados dia del monitoreo. */
   @Column({ type: 'date', nullable: true })
   fechaSiembra!: string | null;

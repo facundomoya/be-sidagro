@@ -25,8 +25,10 @@ const dia = (fecha: string) => ({
 // Escenario tal como lo devuelve findOne (con relaciones cargadas).
 const simulacionGuardada = (recomendacion: object | null = null) => ({
   id: 10,
+  createdAt: new Date('2026-10-31T15:00:00Z'),
   lote: {
     nombre: 'L1',
+    fechaSiembra: '2026-04-09',
     provincia: { nombre: 'San Luis' },
     campania: { nombre: '2026/2027' },
   },
@@ -91,6 +93,7 @@ describe('SimulacionService', () => {
         id: 2,
         estado: 'ACTIVO',
         nombre: 'L1',
+        fechaSiembra: '2026-10-20',
         provincia: { id: 7 },
       }),
       findEtapa: jest.fn().mockResolvedValue(etapa),
@@ -134,6 +137,18 @@ describe('SimulacionService', () => {
       '2026-11-01',
       '2026-11-02',
     ]);
+  });
+
+  it('rechaza una serie climatica que empieza antes de la siembra', async () => {
+    await expect(
+      service.create(
+        dto({ datosClimaticos: [dia('2026-10-19'), dia('2026-10-21')] }),
+        usuario,
+      ),
+    ).rejects.toThrow(
+      'La serie climatica no puede empezar antes de la siembra del lote (2026-10-20)',
+    );
+    expect(repository.save).not.toHaveBeenCalled();
   });
 
   it('rechaza fechas repetidas', async () => {

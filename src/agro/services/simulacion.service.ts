@@ -52,6 +52,11 @@ export class SimulacionService {
 
     // El clima del escenario siempre lo carga el ingeniero (CU 07).
     const serie = this.validarSerieManual(dto);
+    if (lote.fechaSiembra && serie[0].fecha < lote.fechaSiembra) {
+      throw new BadRequestException(
+        `La serie climatica no puede empezar antes de la siembra del lote (${lote.fechaSiembra})`,
+      );
+    }
 
     const simulacionId = await this.repository.withTransaction(
       async (manager) => {
@@ -143,10 +148,9 @@ export class SimulacionService {
   private async intentarRecomendacion(id: number): Promise<boolean> {
     try {
       const simulacion = await this.findOne(id);
-      const generada = await this.recommendationProvider.generar(
-        construirContexto(simulacion),
-      );
-      const errores = validarRecomendacion(generada);
+      const contexto = construirContexto(simulacion);
+      const generada = await this.recommendationProvider.generar(contexto);
+      const errores = validarRecomendacion(generada, contexto.fechaSimulacion);
       if (errores.length > 0) {
         throw new Error(`Recomendacion invalida: ${errores.join('; ')}`);
       }

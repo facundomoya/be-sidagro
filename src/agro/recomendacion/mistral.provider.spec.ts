@@ -9,6 +9,8 @@ import { ReglasLocalesProvider } from './reglas-locales.provider';
 import { validarRecomendacion } from './validar-recomendacion';
 
 const contexto: ContextoEscenario = {
+  fechaSimulacion: '2026-10-31',
+  fechaSiembra: '2026-04-09',
   provincia: 'San Luis',
   campania: '2026/2027',
   lote: 'Lote Norte',
