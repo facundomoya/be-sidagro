@@ -12,6 +12,7 @@ import {
   type ClimateProvider,
 } from '../clima/climate-provider.interface';
 import { CreateObservacionDto } from '../dto/create-observacion.dto';
+import { PaginacionOpcionalDto } from '../dto/paginacion-opcional.dto';
 import { Lote } from '../entities/lote.entity';
 import { ObservacionMonitoreo } from '../entities/observacion-monitoreo.entity';
 import { MAX_DIAS_CLIMATICOS } from '../enums/agro.enums';
@@ -26,6 +27,9 @@ import {
 } from './calculo-monitoreo';
 
 const ZONA_HORARIA = 'America/Argentina/Buenos_Aires';
+
+/** De la mas reciente a la mas vieja. */
+const ORDEN_OBSERVACIONES = { fecha: 'DESC', id: 'DESC' } as const;
 
 /** Fecha de hoy en Argentina (YYYY-MM-DD). */
 const hoyEnArgentina = () =>
@@ -88,9 +92,18 @@ export class MonitoreoService {
     };
   }
 
-  async findObservaciones(loteId: number) {
+  /** Lista completa, o paginada si se manda page o limit. */
+  async findObservaciones(loteId: number, paginacion: PaginacionOpcionalDto) {
     await this.catalogoService.findLote(loteId);
-    return await this.observacionesDe(loteId);
+    if (!paginacion.page && !paginacion.limit) {
+      return await this.observacionesDe(loteId);
+    }
+    return await this.repository.find(ObservacionMonitoreo, {
+      filters: { 'lote.id': loteId },
+      order: ORDEN_OBSERVACIONES,
+      page: paginacion.page,
+      limit: paginacion.limit,
+    });
   }
 
   async createObservacion(
@@ -167,13 +180,13 @@ export class MonitoreoService {
     }));
   }
 
-  /** De la mas reciente a la mas vieja. */
   private async observacionesDe(loteId: number) {
     const { data } = await this.repository.find(ObservacionMonitoreo, {
       filters: { 'lote.id': loteId },
+      order: ORDEN_OBSERVACIONES,
       takeAll: true,
     });
-    return data.sort((a, b) => b.fecha.localeCompare(a.fecha) || b.id - a.id);
+    return data;
   }
 
   /**
