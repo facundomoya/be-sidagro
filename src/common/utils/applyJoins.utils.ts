@@ -22,7 +22,9 @@ export function applyJoins<T extends ObjectLiteral>(
     if (!joins.has(path)) {
       const alias = path.replace(/\./g, '_');
 
-      qb.leftJoin(`${currentAlias}.${relation}`, alias);
+      // find() pudo haber unido ya esta relacion (relations) con el mismo alias.
+      const yaUnido = qb.expressionMap.aliases.some((a) => a.name === alias);
+      if (!yaUnido) qb.leftJoin(`${currentAlias}.${relation}`, alias);
       joins.set(path, alias);
     }
 

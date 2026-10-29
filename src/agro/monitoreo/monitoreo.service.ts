@@ -7,7 +7,6 @@ import {
 import { GenericQueryService } from '../../common/generic_query.service';
 import { hoyEnArgentina } from '../../common/utils/hoyEnArgentina.utils';
 import { User } from '../../user/entities/user.entity';
-import { ClimaService } from '../clima/clima.service';
 import {
   CLIMATE_PROVIDER,
   type ClimateProvider,
@@ -27,6 +26,27 @@ import {
   TEMPERATURA_BASE,
 } from './calculo-monitoreo';
 
+/**
+ * Punto donde se pide el clima: el departamento del lote o, si no tiene, la
+ * capital de la provincia. En Santiago del Estero hay ~400 km de norte a sur.
+ */
+export function ubicacionClima(lote: Lote) {
+  if (lote.departamento) {
+    return {
+      origen: 'DEPARTAMENTO' as const,
+      nombre: lote.departamento.nombre,
+      latitud: Number(lote.departamento.latitud),
+      longitud: Number(lote.departamento.longitud),
+    };
+  }
+  return {
+    origen: 'CAPITAL' as const,
+    nombre: `Capital de ${lote.provincia.nombre}`,
+    latitud: Number(lote.provincia.latitud),
+    longitud: Number(lote.provincia.longitud),
+  };
+}
+
 /** De la mas reciente a la mas vieja. */
 const ORDEN_OBSERVACIONES = { fecha: 'DESC', id: 'DESC' } as const;
 
@@ -41,7 +61,6 @@ export class MonitoreoService {
   constructor(
     private readonly repository: GenericQueryService,
     private readonly catalogoService: CatalogoService,
-    private readonly climaService: ClimaService,
     @Inject(CLIMATE_PROVIDER) private readonly climateProvider: ClimateProvider,
   ) {}
 
@@ -49,12 +68,14 @@ export class MonitoreoService {
     const lote = await this.catalogoService.findLote(loteId);
     const fechaSiembra = this.validarSiembra(lote);
     const hoy = hoyEnArgentina();
+    const ubicacion = ubicacionClima(lote);
 
     const [temperaturas, pronostico, etapas, observaciones] = await Promise.all(
       [
         this.temperaturas(lote, fechaSiembra, sumarDias(hoy, 6)),
-        this.climaService.obtenerPronostico(
-          lote.provincia.id,
+        this.climateProvider.obtenerPronostico(
+          ubicacion.latitud,
+          ubicacion.longitud,
           MAX_DIAS_CLIMATICOS,
         ),
         this.etapas(),
@@ -66,7 +87,7 @@ export class MonitoreoService {
       fechaSiembra,
       hoy,
       temperaturas,
-      pronostico: pronostico.dias,
+      pronostico,
       etapas,
       observaciones,
     });
@@ -77,11 +98,13 @@ export class MonitoreoService {
         nombre: lote.nombre,
         fechaSiembra,
         provincia: lote.provincia.nombre,
+        departamento: lote.departamento?.nombre ?? null,
         campania: lote.campania.nombre,
       },
       fecha: hoy,
       temperaturaBase: TEMPERATURA_BASE,
-      proveedorClimatico: pronostico.proveedor,
+      proveedorClimatico: this.climateProvider.nombre,
+      ubicacionClima: ubicacion,
       ...resultado,
       ultimaObservacion: observaciones[0] ?? null,
     };
@@ -155,9 +178,10 @@ export class MonitoreoService {
   }
 
   private temperaturas(lote: Lote, desde: string, hasta: string) {
+    const { latitud, longitud } = ubicacionClima(lote);
     return this.climateProvider.obtenerTemperaturas(
-      Number(lote.provincia.latitud),
-      Number(lote.provincia.longitud),
+      latitud,
+      longitud,
       desde,
       hasta,
     );

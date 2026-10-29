@@ -27,6 +27,7 @@ import { UpdateLoteDto } from '../dto/update-lote.dto';
 import {
   CampaniaRespuestaDto,
   CampaniasRespuestaDto,
+  DepartamentosRespuestaDto,
   EtapaRespuestaDto,
   EtapasRespuestaDto,
   LoteRespuestaDto,
@@ -45,6 +46,19 @@ export class CatalogoController {
   @ApiOkResponse({ type: ProvinciasRespuestaDto })
   findProvincias() {
     return this.catalogoService.findProvincias();
+  }
+
+  @Get('provincias/:id/departamentos')
+  @Auth(ValidPermissions.AGRO_PARAM_GET)
+  @ApiOperation({
+    summary: 'Departamentos de una provincia, con sus coordenadas',
+    description:
+      'Para elegir el departamento del lote: el monitoreo pide el clima en sus coordenadas.',
+  })
+  @ApiOkResponse({ type: DepartamentosRespuestaDto })
+  @ApiNotFoundResponse({ description: 'La provincia no existe' })
+  findDepartamentos(@Param('id', ParseIntPipe) id: number) {
+    return this.catalogoService.findDepartamentos(id);
   }
 
   @Get('etapas-fenologicas')

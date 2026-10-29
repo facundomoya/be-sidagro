@@ -60,6 +60,18 @@ export class CreateLoteDto {
   @IsPositive()
   provinciaId: number;
 
+  @ApiPropertyOptional({
+    minimum: 1,
+    example: 12,
+    nullable: true,
+    description:
+      'Departamento de la provincia (GET /agro/provincias/:id/departamentos). El monitoreo pide el clima en sus coordenadas; sin departamento usa la capital. En PATCH, null lo quita',
+  })
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  departamentoId?: number | null;
+
   @ApiProperty({ minimum: 1, example: 1 })
   @IsInt()
   @IsPositive()

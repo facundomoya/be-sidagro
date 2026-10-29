@@ -2,6 +2,7 @@ import { Column, Entity, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { BaseClass } from '../../common/entities/baseClass.entity';
 import { Provincia } from './provincia.entity';
 import { Campania } from './campania.entity';
+import { Departamento } from './departamento.entity';
 import { SimulacionEscenario } from './simulacion-escenario.entity';
 import { ObservacionMonitoreo } from './observacion-monitoreo.entity';
 
@@ -32,6 +33,11 @@ export class Lote extends BaseClass {
   })
   @JoinColumn({ name: 'provincia_id' })
   provincia!: Provincia;
+
+  /** Zona del lote: de aca sale el clima del monitoreo. Sin departamento se usa la capital. */
+  @ManyToOne(() => Departamento, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'departamento_id' })
+  departamento!: Departamento | null;
 
   @ManyToOne(() => Campania, (campania) => campania.lotes, {
     nullable: false,

@@ -52,6 +52,9 @@ class LoteMonitoreoDto {
   @ApiProperty({ example: 'San Luis' })
   provincia: string;
 
+  @ApiProperty({ nullable: true, example: 'General Pedernera' })
+  departamento: string | null;
+
   @ApiProperty({ example: '2026/2027' })
   campania: string;
 }
@@ -177,6 +180,25 @@ class AlertaDto {
   mensaje: string;
 }
 
+class UbicacionClimaDto {
+  @ApiProperty({
+    enum: ['DEPARTAMENTO', 'CAPITAL'],
+    example: 'DEPARTAMENTO',
+    description:
+      'CAPITAL: el lote no tiene departamento y se usa el clima de la capital provincial',
+  })
+  origen: string;
+
+  @ApiProperty({ example: 'Copo' })
+  nombre: string;
+
+  @ApiProperty({ example: -25.939161 })
+  latitud: number;
+
+  @ApiProperty({ example: -62.731097 })
+  longitud: number;
+}
+
 export class MonitoreoDto {
   @ApiProperty({ type: LoteMonitoreoDto })
   lote: LoteMonitoreoDto;
@@ -189,6 +211,12 @@ export class MonitoreoDto {
 
   @ApiProperty({ example: 'Open-Meteo' })
   proveedorClimatico: string;
+
+  @ApiProperty({
+    type: UbicacionClimaDto,
+    description: 'Donde se pidio el clima (temperaturas y pronostico)',
+  })
+  ubicacionClima: UbicacionClimaDto;
 
   @ApiProperty({ example: 87 })
   diasDesdeSiembra: number;

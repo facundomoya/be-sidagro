@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Campania } from './entities/campania.entity';
 import { CostoProduccion } from './entities/costo-produccion.entity';
 import { DatoClimatico } from './entities/dato-climatico.entity';
+import { Departamento } from './entities/departamento.entity';
 import { EtapaFenologica } from './entities/etapa-fenologica.entity';
 import { Lote } from './entities/lote.entity';
 import { ObservacionMonitoreo } from './entities/observacion-monitoreo.entity';
@@ -37,6 +38,7 @@ import { PRECIO_SOJA_PROVIDER } from './economico/precio-soja-provider.interface
       Campania,
       CostoProduccion,
       DatoClimatico,
+      Departamento,
       EtapaFenologica,
       Lote,
       ObservacionMonitoreo,

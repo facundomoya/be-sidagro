@@ -19,6 +19,23 @@ export class ProvinciaDto {
   longitud: string;
 }
 
+export class DepartamentoDto {
+  @ApiProperty({ example: 12 })
+  id: number;
+
+  @ApiProperty({ example: 'Copo' })
+  nombre: string;
+
+  @ApiProperty({
+    example: '-25.939161',
+    description: 'Centroide del departamento segun Georef (texto decimal)',
+  })
+  latitud: string;
+
+  @ApiProperty({ example: '-62.731097' })
+  longitud: string;
+}
+
 export class EtapaFenologicaDto {
   @ApiProperty({ example: 4 })
   id: number;
@@ -94,6 +111,13 @@ export class LoteDto {
   @ApiProperty({ type: ProvinciaDto })
   provincia: ProvinciaDto;
 
+  @ApiProperty({
+    type: DepartamentoDto,
+    nullable: true,
+    description: 'null: el monitoreo usa el clima de la capital provincial',
+  })
+  departamento: DepartamentoDto | null;
+
   @ApiProperty({ type: CampaniaDto })
   campania: CampaniaDto;
 }
@@ -110,6 +134,11 @@ class Respuesta {
 class ListaProvincias {
   @ApiProperty({ type: [ProvinciaDto] })
   data: ProvinciaDto[];
+}
+
+class ListaDepartamentos {
+  @ApiProperty({ type: [DepartamentoDto], description: 'Ordenados por nombre' })
+  data: DepartamentoDto[];
 }
 
 class ListaEtapas {
@@ -147,6 +176,11 @@ class PaginaLotes extends Pagina {
 export class ProvinciasRespuestaDto extends Respuesta {
   @ApiProperty({ type: ListaProvincias })
   data: ListaProvincias;
+}
+
+export class DepartamentosRespuestaDto extends Respuesta {
+  @ApiProperty({ type: ListaDepartamentos })
+  data: ListaDepartamentos;
 }
 
 export class EtapasRespuestaDto extends Respuesta {

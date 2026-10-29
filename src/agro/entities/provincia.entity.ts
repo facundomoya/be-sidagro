@@ -1,5 +1,6 @@
 import { Column, Entity, OneToMany } from 'typeorm';
 import { BaseClass } from '../../common/entities/baseClass.entity';
+import { Departamento } from './departamento.entity';
 import { Lote } from './lote.entity';
 
 @Entity({ name: 'provincia' })
@@ -15,4 +16,7 @@ export class Provincia extends BaseClass {
 
   @OneToMany(() => Lote, (lote) => lote.provincia)
   lotes!: Lote[];
+
+  @OneToMany(() => Departamento, (departamento) => departamento.provincia)
+  departamentos!: Departamento[];
 }
