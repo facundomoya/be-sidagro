@@ -19,6 +19,10 @@ export interface FuenteConsultada {
 
 /** Datos del escenario que recibe quien recomienda (reglas locales o IA). */
 export interface ContextoEscenario {
+  /** Dia en que se simula (YYYY-MM-DD): ninguna accion puede ser anterior. */
+  fechaSimulacion: string;
+  /** Siembra del lote (YYYY-MM-DD); null si no esta cargada. */
+  fechaSiembra: string | null;
   provincia: string;
   campania: string;
   lote: string;

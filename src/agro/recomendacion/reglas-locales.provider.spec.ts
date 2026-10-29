@@ -1,7 +1,10 @@
 import { NivelRiesgo } from '../enums/agro.enums';
 import { ContextoEscenario } from './recommendation-provider.interface';
 import { ReglasLocalesProvider } from './reglas-locales.provider';
-import { validarRecomendacion } from './validar-recomendacion';
+import {
+  fechasAnteriores,
+  validarRecomendacion,
+} from './validar-recomendacion';
 
 const dia = (fecha: string, precipitacion = 0, viento = 10) => ({
   fecha,
@@ -14,6 +17,8 @@ const dia = (fecha: string, precipitacion = 0, viento = 10) => ({
 const contexto = (
   overrides: Partial<ContextoEscenario> = {},
 ): ContextoEscenario => ({
+  fechaSimulacion: '2026-11-01',
+  fechaSiembra: '2026-04-09',
   provincia: 'San Luis',
   campania: '2026/2027',
   lote: 'Lote Norte',
@@ -80,6 +85,19 @@ describe('ReglasLocalesProvider', () => {
     expect(r.recomendacionPrincipal).toContain('no se justifica');
   });
 
+  it('no propone como ventana los dias anteriores a la simulacion', async () => {
+    const r = await provider.generar(
+      contexto({
+        fechaSimulacion: '2026-11-02',
+        clima: [dia('2026-10-31'), dia('2026-11-01'), dia('2026-11-04')],
+      }),
+    );
+    const textos = [r.recomendacionPrincipal, ...r.accionesSugeridas].join(' ');
+    expect(textos).toContain('2026-11-04');
+    expect(textos).not.toContain('2026-10-31');
+    expect(textos).not.toContain('2026-11-01');
+  });
+
   it('advierte que el pronostico es de la capital cuando viene de la API', async () => {
     const r = await provider.generar(
       contexto({ fuenteClimatica: 'API', proveedorClimatico: 'Open-Meteo' }),
@@ -102,5 +120,38 @@ describe('validarRecomendacion', () => {
         'nivelRiesgo no es un valor valido',
       ]),
     );
+  });
+});
+
+describe('fechasAnteriores', () => {
+  it('reconoce fechas ISO, dd/mm(/aaaa) y en palabras', () => {
+    expect(
+      fechasAnteriores(
+        'Monitorear el 27 de octubre, el 26/10, el 25/10/2026 y el 2026-10-24; aplicar el 30 de octubre.',
+        '2026-10-28',
+      ),
+    ).toEqual(['2026-10-27', '2026-10-26', '2026-10-25', '2026-10-24']);
+  });
+
+  it('sin anio, enero despues de diciembre es del anio siguiente', () => {
+    expect(fechasAnteriores('Monitorear el 2 de enero', '2026-12-30')).toEqual(
+      [],
+    );
+  });
+});
+
+describe('validarRecomendacion con fecha de simulacion', () => {
+  it('rechaza acciones con fechas que ya pasaron', async () => {
+    const r = await new ReglasLocalesProvider().generar(contexto());
+    const errores = validarRecomendacion(
+      {
+        ...r,
+        accionesSugeridas: ['Monitorear el 27 de octubre en los bordes.'],
+      },
+      '2026-10-28',
+    );
+    expect(errores).toEqual([
+      'accionesSugeridas propone fechas anteriores a la simulacion (2026-10-28): 2026-10-27',
+    ]);
   });
 });

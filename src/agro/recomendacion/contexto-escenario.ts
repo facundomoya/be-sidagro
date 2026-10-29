@@ -1,3 +1,4 @@
+import { fechaEnArgentina } from '../../common/utils/hoyEnArgentina.utils';
 import { SimulacionEscenario } from '../entities/simulacion-escenario.entity';
 import { ContextoEscenario } from './recommendation-provider.interface';
 
@@ -20,6 +21,9 @@ export function construirContexto(
     }));
 
   return {
+    // La fecha de creacion, no la de hoy: un reintento no cambia el escenario.
+    fechaSimulacion: fechaEnArgentina(new Date(simulacion.createdAt)),
+    fechaSiembra: simulacion.lote.fechaSiembra ?? null,
     provincia: simulacion.lote.provincia.nombre,
     campania: simulacion.lote.campania.nombre,
     lote: simulacion.lote.nombre,

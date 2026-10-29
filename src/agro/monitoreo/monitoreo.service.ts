@@ -5,6 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { GenericQueryService } from '../../common/generic_query.service';
+import { hoyEnArgentina } from '../../common/utils/hoyEnArgentina.utils';
 import { User } from '../../user/entities/user.entity';
 import { ClimaService } from '../clima/clima.service';
 import {
@@ -26,14 +27,8 @@ import {
   TEMPERATURA_BASE,
 } from './calculo-monitoreo';
 
-const ZONA_HORARIA = 'America/Argentina/Buenos_Aires';
-
 /** De la mas reciente a la mas vieja. */
 const ORDEN_OBSERVACIONES = { fecha: 'DESC', id: 'DESC' } as const;
-
-/** Fecha de hoy en Argentina (YYYY-MM-DD). */
-const hoyEnArgentina = () =>
-  new Date().toLocaleDateString('en-CA', { timeZone: ZONA_HORARIA });
 
 /**
  * Monitoreo de chinche verde (CU 06): estado del cultivo por grados dia,

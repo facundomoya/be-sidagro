@@ -52,8 +52,10 @@ export class ReglasLocalesProvider implements RecommendationProvider {
           ? Prioridad.MEDIA
           : Prioridad.BAJA;
 
+    // Los dias ya pasados no sirven como ventana para monitorear o aplicar.
     const diasAptos = clima.filter(
       (d) =>
+        d.fecha >= contexto.fechaSimulacion &&
         d.viento <= VIENTO_MAX_APLICACION_KMH &&
         d.precipitacion < LLUVIA_MAX_APLICACION_MM &&
         d.temperatura <= TEMPERATURA_MAX_APLICACION_C,

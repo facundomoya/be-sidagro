@@ -75,6 +75,13 @@ export class LoteDto {
 
   @ApiProperty({
     nullable: true,
+    example: '3.20',
+    description: 'Rendimiento esperado en t/ha (texto decimal)',
+  })
+  rendimiento: string | null;
+
+  @ApiProperty({
+    nullable: true,
     example: '2026-04-09',
     format: 'date',
     description: 'Necesaria para el monitoreo de chinche verde',

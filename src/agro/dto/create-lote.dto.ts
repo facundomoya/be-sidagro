@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  Max,
   MaxLength,
 } from 'class-validator';
 
@@ -29,6 +30,17 @@ export class CreateLoteDto {
   @IsNumber()
   @IsPositive()
   superficie?: number;
+
+  @ApiPropertyOptional({
+    description: 'Rendimiento esperado en toneladas por hectarea (t/ha)',
+    example: 3.2,
+    maximum: 10,
+  })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsPositive()
+  @Max(10, { message: 'rendimiento se expresa en t/ha (maximo 10)' })
+  rendimiento?: number;
 
   @ApiPropertyOptional({
     format: 'date',
